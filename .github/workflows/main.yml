@@ -4,29 +4,30 @@ on:
     branches:
       - main
 jobs:
-  run:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
-        - uses: actions/checkout@v3
-
-        - name: Install dependencies
-          run: npm ci
-
-        - name: Build
-          run: npm run build
-
-        - name: Deploy
-          uses: reggionick/s3-deploy@v3
-          with:
-            folder: out
-            bucket: ${{ secrets.S3_BUCKET }}
-            bucket-region: ${{ secrets.S3_BUCKET_REGION }}
-            dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-            invalidation: /
-            delete-removed: true
-            no-cache: true
-            private: true
-            files-to-include: ".*/*,*/*,**"
+      - uses: actions/checkout@v2
+      - name: Cache modules
+        uses: actions/cache@v1
+        id: npm-cache
+        with:
+          path: node_modules
+          key:${{ runner.os }}-npm-${{ hashFiles('**/npm.lock') }}
+          restore-keys: ${{ runner.os }}-npm-
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id:${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key:${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+      - name: Use Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - name: Install dependencies
+        run: npm
+      - name: Build
+        run: npm build
+      - name: Deploy
+        run: aws s3 sync ./out s3://${{ secrets.S3_BUCKET }}
