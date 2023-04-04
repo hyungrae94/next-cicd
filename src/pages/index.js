@@ -15,7 +15,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
      <main>
-      <h1> 트랙패드 안삼</h1>
+      <h1> 테스트</h1>
      </main>
     </>
   )
